@@ -13,29 +13,24 @@ class dbOperations
     }
 
     function createUser($login, $password, $email){
-        $stmt = $this->conn->prepare("INSERT INTO user VALUES (NULL, ?, ?, ?, 0, now(), 1)");
-        $stmt->bind_param('sss',$login,$password, $email);
+        $stmt = $this->con->prepare("INSERT INTO 'user' ('login', 'pass', 'email', 'isAdmin', 'date', 'isActive') VALUES (?, ?, ?, ?, now(), ?)");
+        $stmt->bind_param($login, $password, $email, 0, 1);
         if($stmt->execute())
             return true;
         return false;
     }
 
     function checkUser($login, $password){
-        $stmt = $this->conn->prepare("SELECT id FROM user WHERE login=? AND pass=?");
-        $stmt->bind_param('ss',$login, $password);
-        if($stmt->execute()) {
-            $stmt->bind_result($id);
-            if ($stmt->fetch()) {
-                return true;
-            } else {
-                return false;
-            }
-        }
+        $stmt = $this->con->prepare("SELECT id FROM 'user' WHERE 'login'=? AND 'pass'=?");
+        $stmt->bind_param($login, $password);
+        if($stmt->execute())
+            return true;
+        return false;
     }
 
     function deleteUser($login){
-        $stmt = $this->conn->prepare("DELETE FROM user WHERE login = ? ");
-        $stmt->bind_param('s',$login);
+        $stmt = $this->con->prepare("DELETE FROM 'user' WHERE login = ? ");
+        $stmt->bind_param($login);
         if($stmt->execute())
             return true;
 
