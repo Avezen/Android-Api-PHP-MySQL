@@ -38,7 +38,7 @@ if(isset($_GET['apicall'])){
 
             $db = new DbOperations();
 
-            $result = $db->createUser(
+            $result = $db->createHero(
                 $_POST['login'],
                 $_POST['pass'],
                 $_POST['email']
@@ -78,7 +78,7 @@ if(isset($_GET['apicall'])){
 
                 if($db->deleteUser($_GET['login'])){
                     $response['error'] = false;
-                    $response['message'] = 'User deleted successfully';
+                    $response['message'] = 'Hero deleted successfully';
                 }else{
                     $response['error'] = true;
                     $response['message'] = 'Some error occurred please try again';
