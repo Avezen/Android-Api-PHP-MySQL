@@ -63,6 +63,7 @@ public class RegisterFormActivity extends AppCompatActivity {
         });
     }
 
+
     @SuppressLint("SetTextI18n")
     @RequiresApi(api = Build.VERSION_CODES.CUPCAKE)
     private void register(String login, String password, String password2, String email) throws IOException {
@@ -72,7 +73,10 @@ public class RegisterFormActivity extends AppCompatActivity {
             info.setText("Proszę wpisać swój login");
             info.requestFocus();
             return;
-        }/*else if (backgroundWorker.loginExist(login)){
+        }else if(login.length() < 3)
+            return;
+
+        /*else if (backgroundWorker.loginExist(login)){
             info.setText("Istnieje konto o podanym loginie");
             info.requestFocus();
             return;
@@ -83,7 +87,9 @@ public class RegisterFormActivity extends AppCompatActivity {
             info.setText("Proszę wpisać swój adres email");
             info.requestFocus();
             return;
-        }/*else if (backgroundWorker.emailExist(email)){
+        }else if(!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches())
+            return;
+        /*else if (backgroundWorker.emailExist(email)){
             info.setText("Istnieje konto o podanym emailu");
             info.requestFocus();
             return;
@@ -93,7 +99,8 @@ public class RegisterFormActivity extends AppCompatActivity {
             info.setText("Proszę wpisać swoje hasło");
             info.requestFocus();
             return;
-        }
+        }else if(password.length() < 6)
+            return;
 
         if (TextUtils.isEmpty(password2)) {
             info.setText("Proszę ponownie wpisać hasło");
@@ -122,51 +129,6 @@ public class RegisterFormActivity extends AppCompatActivity {
     }
 
 
-
-    protected String doGet(String... params) {
-        String apicall = params[0];
-
-        switch (apicall){
-            case "loginexist":
-                String login = params[1];
-                apicall = Api.ROOT_URL + apicall + "&login=" + login;
-                break;
-
-            case "emailexist":
-                String email = params[1];
-                apicall = Api.ROOT_URL + apicall + "&email=" + email;
-                break;
-        }
-
-
-        try {
-            URL url = new URL(apicall);
-            HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
-            httpURLConnection.setRequestMethod("GET");
-            httpURLConnection.setDoOutput(true);
-            httpURLConnection.setDoInput(true);
-
-            InputStream inputStream = httpURLConnection.getInputStream();
-
-            String result = "";
-            String line = "";
-
-            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream, "iso-8859-1"));
-            while ((line = bufferedReader.readLine()) != null) {
-                result += line;
-            }
-            bufferedReader.close();
-            inputStream.close();
-            httpURLConnection.disconnect();
-
-            return result;
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        return null;
-    }
 
 
 
@@ -235,7 +197,9 @@ public class RegisterFormActivity extends AppCompatActivity {
         protected void onPreExecute(){
             alertDialog = new AlertDialog.Builder(context).create();
             alertDialog.setTitle("Register Status");
+            alertDialog.setMessage("Brak połączenia z internetem lub bazą danych");
 
+            alertDialog.show();
 
         }
 

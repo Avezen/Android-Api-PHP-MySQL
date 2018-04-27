@@ -3,6 +3,7 @@ package com.example.maniekcs1995.defotapp;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
@@ -38,8 +39,10 @@ public class MainActivity extends AppCompatActivity {
     private EditText password;
     private TextView info;
     private Button loginButton, registerButton;
-
-
+    SharedPreferences sharedpreferences;
+    SharedPreferences.Editor editor;
+    public static final String Login = "login";
+    public static final String MyPREFERENCES = "MyPrefs" ;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -52,6 +55,8 @@ public class MainActivity extends AppCompatActivity {
         loginButton = (Button) findViewById(R.id.loginButton);
         registerButton = findViewById(R.id.registerButton);
 
+        sharedpreferences = getSharedPreferences("com.example.maniekcs1995.defotapp", MODE_PRIVATE);
+        editor = sharedpreferences.edit();
 
         loginButton.setOnClickListener(new View.OnClickListener() {
             @RequiresApi(api = Build.VERSION_CODES.CUPCAKE)
@@ -59,7 +64,11 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View view) {
                 try {
 
+                    editor.putString(Login, login.getText().toString() );
+                    editor.commit();
+
                     validate(login.getText().toString(), password.getText().toString());
+
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -95,13 +104,10 @@ public class MainActivity extends AppCompatActivity {
 
         String post_data = URLEncoder.encode("login", "UTF-8")+"="+URLEncoder.encode(login, "UTF-8");
 
-
         String apicall = Api.LOGIN_URL;
 
         BackgroundWorker backgroundWorker = new BackgroundWorker(this);
         backgroundWorker.execute(apicall, post_data);
-
-
     }
 
 
@@ -158,14 +164,13 @@ public class MainActivity extends AppCompatActivity {
             context = ctx;
         }
 
+
         @Override
         protected String doInBackground(String... params){
 
             String result = doPost(params);
             return result;
         }
-
-
 
 
         @Override
@@ -175,6 +180,7 @@ public class MainActivity extends AppCompatActivity {
             alertDialog.setMessage("Brak połączenia z internetem");
 
         }
+
 
         @Override
         protected void onPostExecute(String result){

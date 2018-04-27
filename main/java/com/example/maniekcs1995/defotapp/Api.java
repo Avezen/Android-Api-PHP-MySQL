@@ -10,7 +10,7 @@ public class Api {
     public static final String CREATE_USER_URL = ROOT_URL + "createuser";
     public static final String LOGIN_EXIST_URL = ROOT_URL + "loginexist";
     public static final String EMAIL_EXIST_URL = ROOT_URL + "emailexist";
-    public static final String CHECK_USER_URL = ROOT_URL + "checkuser";
+    public static final String CHECK_USER_ID_URL = ROOT_URL + "checkuserid";
     public static final String LOGIN_URL = ROOT_URL + "login";
     public static final String DELETE_USER_URL = ROOT_URL + "deleteuser&login=";
     public static final String CREATE_DEFOT_URL = ROOT_URL + "createdefot";
