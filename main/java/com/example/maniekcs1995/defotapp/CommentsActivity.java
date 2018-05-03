@@ -15,7 +15,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
+import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ListView;
@@ -37,22 +37,23 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
-import java.util.List;
 
 public class CommentsActivity extends AppCompatActivity {
 
-    List<Comment> commentList;
+    ArrayList<Object> commentList;
     ListView listView;
     SharedPreferences sharedpreferences;
     SharedPreferences.Editor editor;
     AlertDialog alertDialog;
-    TextInputEditText textInputEditText;
     Button button;
+
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_comments);
+        setContentView(R.layout.layout_comments_list);
 
         listView = (ListView) findViewById(R.id.listViewComments);
 
@@ -63,72 +64,133 @@ public class CommentsActivity extends AppCompatActivity {
 
         commentList = new ArrayList<>();
 
-        getOneDefot();
-        getDefotComments();
+
+        getDefotComments(sharedpreferences.getInt("defotId",1));
     }
 
-    private void getOneDefot(){
-        String apicall = "getonedefot";
 
-        CommentsActivity.BackgroundWorker backgroundWorker = new CommentsActivity.BackgroundWorker(this);
-        backgroundWorker.execute(apicall, Integer.toString(sharedpreferences.getInt("defotId",0)));
-    }
-
-    private void getDefotComments(){
+    private void getDefotComments(int defotId){
         String apicall = "getdefotcomments";
 
-        CommentsActivity.BackgroundWorker backgroundWorker = new CommentsActivity.BackgroundWorker(this);
-        backgroundWorker.execute(apicall, Integer.toString(sharedpreferences.getInt("defotId",0)));
+        BackgroundWorker backgroundWorker = new BackgroundWorker(this);
+        backgroundWorker.execute(apicall, String.valueOf(defotId));
     }
 
-    private void refreshDefot(JSONObject defot) throws JSONException {
 
-        Defot newDefot = new Defot(
-                    defot.getInt("id"),
-                    defot.getString("title"),
-                    defot.getString("desc"),
-                    defot.getString("url"),
-                    null,
-                    defot.getString("date"),
-                    defot.getInt("user_id")
-                );
+    class CommentsAdapter extends BaseAdapter {
 
-        TextView textViewAuthor = findViewById(R.id.textViewAuthor);
-        TextView textViewDate = findViewById(R.id.textViewDate);
-        TextView textViewTitle = findViewById(R.id.textViewTitle);
-        ImageView imageView = findViewById(R.id.imageView);
-        TextView textViewDesc = findViewById(R.id.textViewDesc);
-        final TextInputEditText textInputEditText = findViewById(R.id.textInputComment);
-        Button addCommentButton = findViewById(R.id.buttonAddComment);
+        ArrayList<Object> commentList;
+        private static final int COMMENT_ITEM = 0;
+        public static final int HEADER = 1;
+        LayoutInflater inflater;
 
-        TextView textViewLogin = findViewById(R.id.textViewLogin);
+        public CommentsAdapter(ArrayList<Object> commentList, Context context) {
+            this.commentList = commentList;
+            inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        }
 
-        CommentsActivity.DownloadImageWithURLTask downloadTask = new CommentsActivity.DownloadImageWithURLTask(imageView);
+        public int getItemViewType(int position) {
+            if (commentList.get(position) instanceof Comment) {
+                return COMMENT_ITEM;
+            } else {
+                return HEADER;
+            }
+        }
 
-        downloadTask.execute(newDefot.getURL());
+        @Override
+        public int getCount() {
+            return commentList.size();
+        }
 
-        textViewAuthor.setText(String.valueOf(newDefot.getUser_id()));
-        textViewDate.setText(newDefot.getDate());
-        textViewTitle.setText(newDefot.getTitle());
-        textViewDesc.setText(newDefot.getDesc());
-        textViewLogin.setText(sharedpreferences.getString("login","DEFAULT"));
+        @Override
+        public Object getItem(int i) {
+            return commentList.get(i);
+        }
 
-        addCommentButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                try {
-                    addNewComment(textInputEditText.getText().toString());
-                } catch (IOException e) {
-                    e.printStackTrace();
+        @Override
+        public long getItemId(int i) {
+            return i;
+        }
+
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+
+
+                switch (getItemViewType(position)) {
+                    case COMMENT_ITEM:
+                        convertView = inflater.inflate(R.layout.layout_comment_item, null);
+                        break;
+                    case HEADER:
+                        convertView = inflater.inflate(R.layout.activity_comments_header, null);
+                        break;
                 }
-                getDefotComments();
 
+
+            switch (getItemViewType(position)) {
+                case COMMENT_ITEM:
+
+                    TextView textViewCommentAuthor = convertView.findViewById(R.id.textViewCommentAuthor);
+                    TextView textViewCommentDate = convertView.findViewById(R.id.textViewCommentDate);
+                    TextView textViewComment = convertView.findViewById(R.id.textViewComment);
+
+                    textViewCommentAuthor.setText(String.valueOf(((Comment)commentList.get(position)).getUser_id()));
+                    textViewCommentDate.setText(((Comment)commentList.get(position)).getDate());
+                    textViewComment.setText(((Comment)commentList.get(position)).getContent());
+                    break;
+
+                case HEADER:
+                    TextView textViewAuthor = convertView.findViewById(R.id.textViewAuthor);
+                    TextView textViewDate = convertView.findViewById(R.id.textViewDate);
+                    TextView textViewTitle = convertView.findViewById(R.id.textViewTitle);
+                    ImageView imageView = convertView.findViewById(R.id.imageView);
+                    TextView textViewDesc = convertView.findViewById(R.id.textViewDesc);
+                    final TextInputEditText textInputEditText = convertView.findViewById(R.id.textInputComment);
+                    Button addCommentButton = convertView.findViewById(R.id.buttonAddComment);
+
+                    TextView textViewLogin = convertView.findViewById(R.id.textViewLogin);
+
+
+                            DownloadImageWithURLTask downloadTask = new DownloadImageWithURLTask(imageView);
+                            downloadTask.execute(((Defot)commentList.get(position)).getURL());
+
+                            textViewAuthor.setText(String.valueOf(((Defot)commentList.get(position)).getUser_id()));
+
+                            textViewDate.setText(((Defot)commentList.get(position)).getDate());
+
+                            textViewTitle.setText(((Defot)commentList.get(position)).getTitle());
+
+                            textViewDesc.setText(((Defot)commentList.get(position)).getDesc());
+
+                            textViewLogin.setText("login");
+
+                    break;
 
             }
-        });
+            convertView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+
+                }
+            });
+/*
+            addCommentButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    try {
+                        addNewComment(textInputEditText.getText().toString());
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    getDefotComments();
 
 
+                }
+            });
+*/
+            return convertView;
+        }
     }
+
 
     private void checkUserId(String login){
         String apicall = "checkuserid";
@@ -140,20 +202,32 @@ public class CommentsActivity extends AppCompatActivity {
     private void addNewComment(String comment) throws IOException{
 
 
-        String post_data = URLEncoder.encode("defot_id", "UTF-8")+"="+URLEncoder.encode(String.valueOf(sharedpreferences.getInt("defotId",0)), "UTF-8")
-                    +"&"+ URLEncoder.encode("user_id", "UTF-8")+"="+URLEncoder.encode(sharedpreferences.getString("user_id","0"), "UTF-8")
-                    +"&"+ URLEncoder.encode("content", "UTF-8")+"="+URLEncoder.encode(comment, "UTF-8");
+    String post_data = URLEncoder.encode("defot_id", "UTF-8")+"="+URLEncoder.encode(String.valueOf(sharedpreferences.getInt("defotId",0)), "UTF-8")
+                +"&"+ URLEncoder.encode("user_id", "UTF-8")+"="+URLEncoder.encode(sharedpreferences.getString("user_id","0"), "UTF-8")
+                +"&"+ URLEncoder.encode("content", "UTF-8")+"="+URLEncoder.encode(comment, "UTF-8");
 
-        String apicall = "createcomment";
-        BackgroundWorker backgroundWorker = new BackgroundWorker(this);
-        backgroundWorker.execute(apicall, post_data);
+    String apicall = "createcomment";
+    BackgroundWorker backgroundWorker = new BackgroundWorker(this);
+    backgroundWorker.execute(apicall, post_data);
     }
 
     private void refreshCommentList(JSONArray comments) throws JSONException {
 
         commentList.clear();
+        /*  */
 
-        for (int i = 0; i < comments.length(); i++) {
+        commentList.add(new Defot( 1,
+                sharedpreferences.getString("defotTitle","DEFAULT"),
+                sharedpreferences.getString("defotDesc","DEFAULT"),
+                sharedpreferences.getString("defotURL","DEFAULT"),
+                null,
+                sharedpreferences.getString("defotDate","DEFAULT"),
+                sharedpreferences.getInt("defotAuthorId",0)
+        ));
+
+
+        int length = comments.length();
+        for (int i = 0; i < length; i++) {
 
             JSONObject obj = comments.getJSONObject(i);
 
@@ -166,44 +240,11 @@ public class CommentsActivity extends AppCompatActivity {
             ));
         }
 
-        CommentsAdapter adapter = new CommentsAdapter(commentList);
+        CommentsAdapter adapter = new CommentsAdapter(commentList , this);
         listView.setAdapter(adapter);
     }
 
-    class CommentsAdapter extends ArrayAdapter<Comment> {
 
-        List<Comment> commentList;
-
-        public CommentsAdapter(List<Comment> commentList) {
-            super(CommentsActivity.this, R.layout.layout_comment_list, commentList);
-            this.commentList = commentList;
-        }
-
-        @Override
-        public View getView(int position, View convertView, ViewGroup parent) {
-
-            LayoutInflater inflater = getLayoutInflater();
-            View listViewItem = inflater.inflate(R.layout.layout_comment_list, null, true);
-
-            TextView textViewCommentAuthor = listViewItem.findViewById(R.id.textViewAuthor);
-            TextView textViewCommentDate = listViewItem.findViewById(R.id.textViewDate);
-            TextView textViewComment = listViewItem.findViewById(R.id.textViewComment);
-
-            final Comment comment = commentList.get(position);
-
-            textViewCommentAuthor.setText(String.valueOf(comment.getUser_id()));
-            textViewCommentDate.setText(comment.getDate());
-            textViewComment.setText(comment.getContent());
-
-            listViewItem.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-
-                }
-            });
-            return listViewItem;
-        }
-    }
 
     protected String doGet(String... params) {
         String apicall = params[0];
@@ -304,7 +345,6 @@ public class CommentsActivity extends AppCompatActivity {
         return null;
     }
 
-
     private class DownloadImageWithURLTask extends AsyncTask<String, Void, Bitmap> {
         ImageView bmImage;
         public DownloadImageWithURLTask(ImageView bmImage) {
@@ -327,6 +367,7 @@ public class CommentsActivity extends AppCompatActivity {
             bmImage.setImageBitmap(result);
         }
     }
+
 
     class BackgroundWorker extends AsyncTask<String,Void,String> {
 
@@ -365,20 +406,11 @@ public class CommentsActivity extends AppCompatActivity {
                     JSONObject obj = new JSONObject(result);
 
                     switch (obj.getString("apicall")) {
-                        case "getonedefot":
-                            JSONObject defot = obj.getJSONObject("defot");
-
-                            if (!obj.getBoolean("error")) {
-                                refreshDefot(defot);
-                            }
-                            break;
-
                         case "getdefotcomments":
                             JSONArray comments = obj.getJSONArray("comments");
 
                             if (!obj.getBoolean("error")) {
                                 refreshCommentList(comments);
-
                             }
                             break;
                         case "checkuserid":

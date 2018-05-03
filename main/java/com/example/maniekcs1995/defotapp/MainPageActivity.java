@@ -13,6 +13,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.ListView;
@@ -102,8 +103,8 @@ public class MainPageActivity extends AppCompatActivity {
             LayoutInflater inflater = getLayoutInflater();
             View listViewItem = inflater.inflate(R.layout.layout_defot_list, null, true);
 
-            TextView textViewAuthor = listViewItem.findViewById(R.id.textViewAuthor);
-            TextView textViewDate = listViewItem.findViewById(R.id.textViewDate);
+            TextView textViewAuthor = listViewItem.findViewById(R.id.textViewCommentAuthor);
+            TextView textViewDate = listViewItem.findViewById(R.id.textViewCommentDate);
             TextView textViewTitle = listViewItem.findViewById(R.id.textViewTitle);
             ImageView imageView = listViewItem.findViewById(R.id.imageView);
             TextView textViewDesc = listViewItem.findViewById(R.id.textViewDesc);
@@ -116,19 +117,32 @@ public class MainPageActivity extends AppCompatActivity {
 
             downloadTask.execute(defot.getURL());
 
-            textViewAuthor.setText(String.valueOf(defot.getUser_id()));
+            textViewAuthor.setText(String.valueOf(defot.getId()));
             textViewDate.setText(defot.getDate());
             textViewTitle.setText(defot.getTitle());
             textViewDesc.setText(defot.getDesc());
             textViewLogin.setText(sharedpreferences.getString("login","DEFAULT"));
 
 
-            listViewItem.setOnClickListener(new View.OnClickListener() {
+            listView.setOnItemClickListener(new AdapterView.OnItemClickListener()
+            {
                 @Override
-                public void onClick(View view) {
-                    editor.putInt("defotId", defot.getId());
+                public void onItemClick(AdapterView<?> adapter, View v, int position,
+                                        long arg3)
+                {
+
+                    Defot defotItem = (Defot)adapter.getItemAtPosition(position);
+
+                    editor.putInt("defotId", defotItem.getId());
+                    editor.putInt("defotAuthorId", defotItem.getUser_id());
+                    editor.putString("defotTitle",defotItem.getTitle());
+                    editor.putString("defotDate",defotItem.getDate());
+                    editor.putString("defotURL", defotItem.getURL());
+                    editor.putString("defotDesc",defotItem.getDesc());
 
                     editor.commit();
+
+
                     Intent intent = new Intent(MainPageActivity.this,CommentsActivity.class);
                     startActivity(intent);
                 }
