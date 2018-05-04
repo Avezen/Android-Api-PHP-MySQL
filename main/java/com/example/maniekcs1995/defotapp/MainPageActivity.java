@@ -8,6 +8,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -40,6 +41,7 @@ public class MainPageActivity extends AppCompatActivity {
     Bitmap bitmap;
     SharedPreferences sharedpreferences;
     SharedPreferences.Editor editor;
+    FloatingActionButton addDefotButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,9 +53,21 @@ public class MainPageActivity extends AppCompatActivity {
 
         listView = (ListView) findViewById(R.id.listViewDefots);
 
+        addDefotButton = findViewById(R.id.addDefotButton);
         defotList = new ArrayList<>();
 
+        if(!sharedpreferences.getString("callback", "No callback").equals("No callback")){
+           // Toast.makeText(MainPageActivity.this, sharedpreferences.getString("callback", "No callback"), Toast.LENGTH_LONG).show();
+        }
         getAllDefots();
+
+        addDefotButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(MainPageActivity.this, AddDefotActivity.class);
+                startActivity(intent);
+            }
+        });
 
     }
 
@@ -117,11 +131,11 @@ public class MainPageActivity extends AppCompatActivity {
 
             downloadTask.execute(defot.getURL());
 
-            textViewAuthor.setText(String.valueOf(defot.getId()));
+            //textViewAuthor.setText(String.valueOf(defot.getId()));
             textViewDate.setText(defot.getDate());
             textViewTitle.setText(defot.getTitle());
             textViewDesc.setText(defot.getDesc());
-            textViewLogin.setText(sharedpreferences.getString("login","DEFAULT"));
+
 
 
             listView.setOnItemClickListener(new AdapterView.OnItemClickListener()

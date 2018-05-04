@@ -38,7 +38,7 @@ public class MainActivity extends AppCompatActivity {
     private EditText login;
     private EditText password;
     private TextView info;
-    private Button loginButton, registerButton;
+    private Button loginButton, registerButton, guestButton;
     SharedPreferences sharedpreferences;
     SharedPreferences.Editor editor;
     public static final String Login = "login";
@@ -54,7 +54,7 @@ public class MainActivity extends AppCompatActivity {
         info = (TextView) findViewById(R.id.textView);
         loginButton = (Button) findViewById(R.id.loginButton);
         registerButton = findViewById(R.id.registerButton);
-
+        guestButton = findViewById(R.id.guestButton);
         sharedpreferences = getSharedPreferences("com.example.maniekcs1995.defotapp", MODE_PRIVATE);
         editor = sharedpreferences.edit();
 
@@ -80,6 +80,17 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 Intent intent = new Intent(MainActivity.this,RegisterFormActivity.class);
+                startActivity(intent);
+            }
+        });
+
+        guestButton.setOnClickListener(new View.OnClickListener() {
+            @RequiresApi(api = Build.VERSION_CODES.CUPCAKE)
+            @Override
+            public void onClick(View view) {
+                editor.putString("login","guest");
+                editor.commit();
+                Intent intent = new Intent(MainActivity.this,MainPageActivity.class);
                 startActivity(intent);
             }
         });

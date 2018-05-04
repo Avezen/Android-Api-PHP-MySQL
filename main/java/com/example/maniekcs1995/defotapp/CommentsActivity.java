@@ -2,6 +2,7 @@ package com.example.maniekcs1995.defotapp;
 
 import android.app.AlertDialog;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -64,6 +65,35 @@ public class CommentsActivity extends AppCompatActivity {
 
         commentList = new ArrayList<>();
 
+        if(!sharedpreferences.getString("login", "guest").equals("guest")) {
+            final TextInputEditText textComment = findViewById(R.id.textInputComment);
+
+
+            Button addCommentButton = findViewById(R.id.buttonAddComment);
+
+            addCommentButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    try {
+                        final String input = textComment.getText().toString();
+                        if (input != null) {
+                            addNewComment(input);
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    getDefotComments(sharedpreferences.getInt("defotId",1));
+                    textComment.setText("");
+                }
+            });
+
+        }else{
+            findViewById(R.id.textInputComment).setVisibility(View.GONE);
+            findViewById(R.id.buttonAddComment).setVisibility(View.GONE);
+            TextView textViewInfo = findViewById(R.id.textViewInfo);
+            textViewInfo.setWidth(1400);
+            textViewInfo.setText("                  Zaloguj się, aby dodać komentarz");
+        }
 
         getDefotComments(sharedpreferences.getInt("defotId",1));
     }
@@ -113,7 +143,7 @@ public class CommentsActivity extends AppCompatActivity {
         }
 
         @Override
-        public View getView(int position, View convertView, ViewGroup parent) {
+        public View getView(final int position, View convertView, ViewGroup parent) {
 
 
                 switch (getItemViewType(position)) {
@@ -133,6 +163,8 @@ public class CommentsActivity extends AppCompatActivity {
                     TextView textViewCommentDate = convertView.findViewById(R.id.textViewCommentDate);
                     TextView textViewComment = convertView.findViewById(R.id.textViewComment);
 
+
+
                     textViewCommentAuthor.setText(String.valueOf(((Comment)commentList.get(position)).getUser_id()));
                     textViewCommentDate.setText(((Comment)commentList.get(position)).getDate());
                     textViewComment.setText(((Comment)commentList.get(position)).getContent());
@@ -144,8 +176,6 @@ public class CommentsActivity extends AppCompatActivity {
                     TextView textViewTitle = convertView.findViewById(R.id.textViewTitle);
                     ImageView imageView = convertView.findViewById(R.id.imageView);
                     TextView textViewDesc = convertView.findViewById(R.id.textViewDesc);
-                    final TextInputEditText textInputEditText = convertView.findViewById(R.id.textInputComment);
-                    Button addCommentButton = convertView.findViewById(R.id.buttonAddComment);
 
                     TextView textViewLogin = convertView.findViewById(R.id.textViewLogin);
 
@@ -153,7 +183,7 @@ public class CommentsActivity extends AppCompatActivity {
                             DownloadImageWithURLTask downloadTask = new DownloadImageWithURLTask(imageView);
                             downloadTask.execute(((Defot)commentList.get(position)).getURL());
 
-                            textViewAuthor.setText(String.valueOf(((Defot)commentList.get(position)).getUser_id()));
+                            //textViewAuthor.setText(String.valueOf(((Defot)commentList.get(position)).getUser_id()));
 
                             textViewDate.setText(((Defot)commentList.get(position)).getDate());
 
@@ -161,17 +191,12 @@ public class CommentsActivity extends AppCompatActivity {
 
                             textViewDesc.setText(((Defot)commentList.get(position)).getDesc());
 
-                            textViewLogin.setText("login");
+
 
                     break;
 
             }
-            convertView.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
 
-                }
-            });
 /*
             addCommentButton.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -396,6 +421,7 @@ public class CommentsActivity extends AppCompatActivity {
             alertDialog = new AlertDialog.Builder(context).create();
             alertDialog.setTitle("Register Status");
 
+
         }
 
 
@@ -405,13 +431,22 @@ public class CommentsActivity extends AppCompatActivity {
                 try {
                     JSONObject obj = new JSONObject(result);
 
+
                     switch (obj.getString("apicall")) {
                         case "getdefotcomments":
-                            JSONArray comments = obj.getJSONArray("comments");
-
                             if (!obj.getBoolean("error")) {
+                                JSONArray comments = obj.getJSONArray("comments");
                                 refreshCommentList(comments);
+                            }else{
+                                editor.putString("callback", "Brak komentarzy");
+                                editor.commit();
+
+                                Intent intent = new Intent(CommentsActivity.this, MainPageActivity.class);
+                                startActivity(intent);
                             }
+
+
+
                             break;
                         case "checkuserid":
                             editor.putString("user_id", obj.getString("userId"));
