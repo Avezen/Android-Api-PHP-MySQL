@@ -16,9 +16,11 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -59,8 +61,11 @@ public class MainPageActivity extends AppCompatActivity {
         if(!sharedpreferences.getString("callback", "No callback").equals("No callback")){
            // Toast.makeText(MainPageActivity.this, sharedpreferences.getString("callback", "No callback"), Toast.LENGTH_LONG).show();
         }
-        getAllDefots();
 
+        checkUserId(sharedpreferences.getString("login", "DEFAULT"));
+
+        getAllDefots();
+        Toast.makeText(MainPageActivity.this, String.valueOf(sharedpreferences.getInt("userId", 0)), Toast.LENGTH_LONG).show();
         addDefotButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -78,6 +83,21 @@ public class MainPageActivity extends AppCompatActivity {
         backgroundWorker.execute(apicall);
     }
 
+    private void deleteDefot(int id){
+        String apicall = "deletedefot";
+
+        String userId = String.valueOf(id);
+
+        BackgroundWorker backgroundWorker = new BackgroundWorker(this);
+        backgroundWorker.execute(apicall, userId);
+    }
+
+    private void checkUserId(String login){
+        String apicall = "checkuserid";
+
+        BackgroundWorker backgroundWorker = new BackgroundWorker(this);
+        backgroundWorker.execute(apicall, login);
+    }
 
     private void refreshDefotList(JSONArray defots) throws JSONException {
         defotList.clear();
@@ -125,9 +145,25 @@ public class MainPageActivity extends AppCompatActivity {
 
             TextView textViewLogin = listViewItem.findViewById(R.id.textViewLogin);
 
+            final Defot defot = defotList.get(position);
+
+            if(defot.getUser_id() == sharedpreferences.getInt("userId", 0)) {
+                final Button deleteDefotButton = listViewItem.findViewById(R.id.deleteDefotButton);
+
+                deleteDefotButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        deleteDefot(defot.getId());
+                        getAllDefots();
+                    }
+                });
+            }else{
+                listViewItem.findViewById(R.id.deleteDefotButton).setVisibility(View.GONE);
+            }
+
             DownloadImageWithURLTask downloadTask = new DownloadImageWithURLTask(imageView);
 
-            final Defot defot = defotList.get(position);
+
 
             downloadTask.execute(defot.getURL());
 
@@ -178,6 +214,14 @@ public class MainPageActivity extends AppCompatActivity {
             case "getonedefot":
                 String id = params[1];
                 apicall = Api.ROOT_URL + apicall + "&id=" + id;
+                break;
+            case "checkuserid":
+                String login = params[1];
+                apicall = Api.ROOT_URL + apicall + "&login=" + login;
+                break;
+            case "deletedefot":
+                String defotId = params[1];
+                apicall = Api.ROOT_URL + apicall + "&id=" + defotId;
                 break;
         }
 
@@ -266,11 +310,24 @@ public class MainPageActivity extends AppCompatActivity {
             try {
                 JSONObject obj = new JSONObject(result);
 
-                JSONArray defots = obj.getJSONArray("defots");
-
                 if (!obj.getBoolean("error")) {
-                    refreshDefotList(defots);
+                    switch (obj.getString("apicall")) {
+                        case "getalldefots":
+                            JSONArray defots = obj.getJSONArray("defots");
+
+                            refreshDefotList(defots);
+                            break;
+                        case "checkuserid":
+                            editor.putInt("userId",obj.getInt("userId"));
+                            editor.commit();
+                            break;
+                        case "deletedefot":
+                            Toast.makeText(MainPageActivity.this, "Pomyślnie usunięto", Toast.LENGTH_LONG).show();
+                            break;
+                    }
+
                 }
+
 
             }catch(JSONException e){
                 e.getStackTrace();

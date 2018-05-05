@@ -64,8 +64,7 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View view) {
                 try {
 
-                    editor.putString(Login, login.getText().toString() );
-                    editor.commit();
+
 
                     validate(login.getText().toString(), password.getText().toString());
 
@@ -195,7 +194,9 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(String result){
+
             try {
+
                 if(result != null) {
 
                     JSONObject obj = new JSONObject(result);
@@ -207,6 +208,8 @@ public class MainActivity extends AppCompatActivity {
                             try {
                                 result = obj.getString("hash");
                                 if (BCrypt.checkpw(pw, result)) {
+                                    editor.putString(Login, login.getText().toString() );
+                                    editor.commit();
                                     Intent intent = new Intent(MainActivity.this, MainPageActivity.class);
                                     startActivity(intent);
                                 } else {
