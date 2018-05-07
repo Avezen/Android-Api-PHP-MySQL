@@ -253,4 +253,25 @@ class dbOperations
 
     }
 
+    function getAllDefotsRating(){
+        $stmt = $this->conn->prepare("SELECT * FROM rating ORDER BY defot_id");
+        $stmt->bind_result($id, $userId, $defotId, $value);
+        $stmt->execute();
+
+        $ratings = array();
+
+        while($stmt->fetch()) {
+            $rating = array();
+
+            $rating['id'] = $id;
+            $rating['userId'] = $userId;
+            $rating['defotId'] = $defotId;
+            $rating['value'] = $value;
+
+            array_push($ratings, $rating);
+        }
+
+        return $ratings;
+    }
+
 }
