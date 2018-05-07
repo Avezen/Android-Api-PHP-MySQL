@@ -374,6 +374,21 @@ if(isset($_GET['apicall'])){
                 $response['message'] = 'No parameters';
             }
             break;
+
+        case 'getalldefotsrating':
+            $db = new dbOperations();
+
+            if($db->getAllDefotsRating()){
+                $response['apicall'] = 'getalldefotsrating';
+                $response['error'] = false;
+                $response['message'] = 'I found you something';
+                $response['rating'] = $db->getAllDefotsRating();
+            }else{
+                $response['apicall'] = 'getalldefotsrating';
+                $response['error'] = true;
+                $response['message'] = 'Some error occurred please try again';
+            }
+            break;
     }
 
 }else{
