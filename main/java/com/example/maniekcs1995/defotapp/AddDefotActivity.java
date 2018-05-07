@@ -54,7 +54,7 @@ public class AddDefotActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 try {
-                    addNewDefot(editTextDefotTitle.getText().toString(), editTextDefotDesc.getText().toString(), editTextDefotUrl.getText().toString(), 2);
+                    addNewDefot(editTextDefotTitle.getText().toString(), editTextDefotDesc.getText().toString(), editTextDefotUrl.getText().toString(), 13);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }

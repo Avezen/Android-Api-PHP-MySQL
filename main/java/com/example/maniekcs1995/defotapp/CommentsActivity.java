@@ -241,11 +241,11 @@ public class CommentsActivity extends AppCompatActivity {
         commentList.clear();
         /*  */
 
-        commentList.add(new Defot( 1,
+        commentList.add(new Defot( sharedpreferences.getInt("defotId", 0),
                 sharedpreferences.getString("defotTitle","DEFAULT"),
                 sharedpreferences.getString("defotDesc","DEFAULT"),
                 sharedpreferences.getString("defotURL","DEFAULT"),
-                null,
+                sharedpreferences.getInt("defotRating", 100),
                 sharedpreferences.getString("defotDate","DEFAULT"),
                 sharedpreferences.getInt("defotAuthorId",0)
         ));

@@ -27,17 +27,24 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 
 public class MainPageActivity extends AppCompatActivity {
 
     List<Defot> defotList;
+    List<Rating> ratingList;
     ListView listView;
     ImageView imageView;
     Bitmap bitmap;
@@ -57,6 +64,9 @@ public class MainPageActivity extends AppCompatActivity {
 
         addDefotButton = findViewById(R.id.addDefotButton);
         defotList = new ArrayList<>();
+        ratingList = new ArrayList<>();
+
+        getAllDefotsRating();
 
         if(!sharedpreferences.getString("callback", "No callback").equals("No callback")){
            // Toast.makeText(MainPageActivity.this, sharedpreferences.getString("callback", "No callback"), Toast.LENGTH_LONG).show();
@@ -65,7 +75,10 @@ public class MainPageActivity extends AppCompatActivity {
         checkUserId(sharedpreferences.getString("login", "DEFAULT"));
 
         getAllDefots();
-        Toast.makeText(MainPageActivity.this, String.valueOf(sharedpreferences.getInt("userId", 0)), Toast.LENGTH_LONG).show();
+
+
+
+        //Toast.makeText(MainPageActivity.this, String.valueOf(sharedpreferences.getInt("userId", 0)), Toast.LENGTH_LONG).show();
         addDefotButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -99,11 +112,85 @@ public class MainPageActivity extends AppCompatActivity {
         backgroundWorker.execute(apicall, login);
     }
 
+    private void getDefotRating(int defotId){
+        String apicall = "getdefotrating";
+
+        BackgroundWorker backgroundWorker = new BackgroundWorker(this);
+        backgroundWorker.execute(apicall, String.valueOf(defotId));
+    }
+
+    private void isDefotRated(int defotId, int userId){
+        String apicall = "isdefotrated";
+
+        BackgroundWorker backgroundWorker = new BackgroundWorker(this);
+        backgroundWorker.execute(apicall, String.valueOf(defotId), String.valueOf(userId));
+    }
+
+    private void getAllDefotsRating(){
+        String apicall = "getalldefotsrating";
+
+        BackgroundWorker backgroundWorker = new BackgroundWorker(this);
+        backgroundWorker.execute(apicall);
+    }
+
+    private void rateDefot(int defotId, int userId, int rate) throws UnsupportedEncodingException {
+        String apicall = "ratedefot";
+
+        String post_data = URLEncoder.encode("defot_id", "UTF-8")+"="+URLEncoder.encode(String.valueOf(defotId), "UTF-8")
+                +"&"+ URLEncoder.encode("user_id", "UTF-8")+"="+URLEncoder.encode(String.valueOf(userId), "UTF-8")
+                +"&"+ URLEncoder.encode("value", "UTF-8")+"="+URLEncoder.encode(String.valueOf(rate), "UTF-8");
+
+        BackgroundWorker backgroundWorker = new BackgroundWorker(this);
+        backgroundWorker.execute(apicall, post_data);
+    }
+
+    private void loadDefotRatings(JSONArray rating) throws JSONException {
+        ratingList.clear();
+        int j = 0;
+
+        for(int i = 0; i < rating.length(); i++){
+
+            JSONObject obj = rating.getJSONObject(i);
+
+
+
+            if(obj.getInt("value") != 0) {
+                if (i > 0) {
+                    JSONObject obj2 = rating.getJSONObject(i - 1);
+
+                    if (obj.getInt("defotId") == obj2.getInt("defotId")) {
+                        ratingList.get(j).updateRating(obj.getInt("value"));
+
+                    }else{
+                        j++;
+
+                         ratingList.add(new Rating(
+                                 obj.getInt("defotId"),
+                                 obj.getInt("value")
+                         ));
+                    }
+
+                } else {
+                    ratingList.add(new Rating(
+                            obj.getInt("defotId"),
+                            obj.getInt("value")
+                    ));
+                }
+            }
+        }
+        Toast.makeText(MainPageActivity.this, String.valueOf(ratingList.get(0).getRating()) + String.valueOf(ratingList.get(0).getDefotId())
+                 + String.valueOf(ratingList.get(1).getRating()) + String.valueOf(ratingList.get(1).getDefotId()), Toast.LENGTH_LONG).show();
+
+    }
+
     private void refreshDefotList(JSONArray defots) throws JSONException {
         defotList.clear();
 
+
         for (int i = 0; i < defots.length(); i++) {
+
             JSONObject obj = defots.getJSONObject(i);
+
 
 
             defotList.add(new Defot(
@@ -111,10 +198,13 @@ public class MainPageActivity extends AppCompatActivity {
                     obj.getString("title"),
                     obj.getString("desc"),
                     obj.getString("url"),
-                   null,
+                    0,
                     obj.getString("date"),
                     obj.getInt("user_id")
             ));
+
+
+
         }
 
         DefotAdapter adapter = new DefotAdapter(defotList);
@@ -132,20 +222,64 @@ public class MainPageActivity extends AppCompatActivity {
         }
 
         @Override
-        public View getView(int position, View convertView, ViewGroup parent) {
+        public View getView(final int position, View convertView, ViewGroup parent) {
 
             LayoutInflater inflater = getLayoutInflater();
-            View listViewItem = inflater.inflate(R.layout.layout_defot_list, null, true);
+            final View listViewItem = inflater.inflate(R.layout.layout_defot_list, null, true);
 
             TextView textViewAuthor = listViewItem.findViewById(R.id.textViewCommentAuthor);
             TextView textViewDate = listViewItem.findViewById(R.id.textViewCommentDate);
             TextView textViewTitle = listViewItem.findViewById(R.id.textViewTitle);
             ImageView imageView = listViewItem.findViewById(R.id.imageView);
             TextView textViewDesc = listViewItem.findViewById(R.id.textViewDesc);
+            final TextView textViewRating = listViewItem.findViewById(R.id.textViewRating);
+            final Button rateUpButton = listViewItem.findViewById(R.id.rateUpButton);
+            final Button rateDownButton = listViewItem.findViewById(R.id.rateDownButton);
 
             TextView textViewLogin = listViewItem.findViewById(R.id.textViewLogin);
 
             final Defot defot = defotList.get(position);
+
+
+            DownloadImageWithURLTask downloadTask = new DownloadImageWithURLTask(imageView);
+
+            downloadTask.execute(defot.getURL());
+
+            //textViewAuthor.setText(String.valueOf(defot.getId()));
+            textViewDate.setText(defot.getDate());
+            textViewTitle.setText(defot.getTitle());
+            textViewDesc.setText(defot.getDesc());
+            try {
+                textViewRating.setText(String.valueOf(ratingList.get(position).getRating()));
+            } catch (IndexOutOfBoundsException e) {
+                System.out.println("Invalid option");
+            }
+
+            listView.setOnItemClickListener(new AdapterView.OnItemClickListener()
+            {
+                @Override
+                public void onItemClick(AdapterView<?> adapter, View v, int position,
+                                        long arg3)
+                {
+
+                    Defot defotItem = (Defot)adapter.getItemAtPosition(position);
+
+                    editor.putInt("defotId", defotItem.getId());
+                    editor.putInt("defotAuthorId", defotItem.getUser_id());
+                    //editor.putInt("defotRating", defotItem.getRating());
+                    editor.putString("defotTitle",defotItem.getTitle());
+                    editor.putString("defotDate",defotItem.getDate());
+                    editor.putString("defotURL", defotItem.getURL());
+                    editor.putString("defotDesc",defotItem.getDesc());
+
+                    editor.commit();
+
+
+                    Intent intent = new Intent(MainPageActivity.this,CommentsActivity.class);
+                    startActivity(intent);
+                }
+            });
+
 
             if(defot.getUser_id() == sharedpreferences.getInt("userId", 0)) {
                 final Button deleteDefotButton = listViewItem.findViewById(R.id.deleteDefotButton);
@@ -161,42 +295,57 @@ public class MainPageActivity extends AppCompatActivity {
                 listViewItem.findViewById(R.id.deleteDefotButton).setVisibility(View.GONE);
             }
 
-            DownloadImageWithURLTask downloadTask = new DownloadImageWithURLTask(imageView);
+            if(!sharedpreferences.getString("login", "guest").equals("guest")){
+                rateUpButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        try {
+                            rateDefot(defot.getId(), sharedpreferences.getInt("userId", 0), 1);
+                            rateUpButton.setClickable(true);
+                            listViewItem.findViewById(R.id.rateDownButton).setVisibility(View.GONE);
+                            try {
+                                if((textViewRating.getText()).equals("(rating)")){
+                                    textViewRating.setText(String.valueOf(1));
+                                }else {
+                                    textViewRating.setText(String.valueOf(ratingList.get(position).getRating() + 1));
+                                }
+                            } catch (IndexOutOfBoundsException e) {
+                                System.out.println("Invalid option");
+                            }
+                        } catch (UnsupportedEncodingException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                });
+
+                rateDownButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        try {
+                            rateDefot(defot.getId(), sharedpreferences.getInt("userId", 0), -1);
+                            rateDownButton.setClickable(true);
+                            listViewItem.findViewById(R.id.rateUpButton).setVisibility(View.GONE);
+                            try {
+                                if((textViewRating.getText()).equals("(rating)")){
+                                    textViewRating.setText(String.valueOf(-1));
+                                }else {
+                                    textViewRating.setText(String.valueOf(ratingList.get(position).getRating() - 1));
+                                }
+                            } catch (IndexOutOfBoundsException e) {
+                                System.out.println("Invalid option");
+                            }
+                        } catch (UnsupportedEncodingException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                });
+            }else{
+                listViewItem.findViewById(R.id.rateUpButton).setVisibility(View.GONE);
+                listViewItem.findViewById(R.id.rateDownButton).setVisibility(View.GONE);
+            }
 
 
 
-            downloadTask.execute(defot.getURL());
-
-            //textViewAuthor.setText(String.valueOf(defot.getId()));
-            textViewDate.setText(defot.getDate());
-            textViewTitle.setText(defot.getTitle());
-            textViewDesc.setText(defot.getDesc());
-
-
-
-            listView.setOnItemClickListener(new AdapterView.OnItemClickListener()
-            {
-                @Override
-                public void onItemClick(AdapterView<?> adapter, View v, int position,
-                                        long arg3)
-                {
-
-                    Defot defotItem = (Defot)adapter.getItemAtPosition(position);
-
-                    editor.putInt("defotId", defotItem.getId());
-                    editor.putInt("defotAuthorId", defotItem.getUser_id());
-                    editor.putString("defotTitle",defotItem.getTitle());
-                    editor.putString("defotDate",defotItem.getDate());
-                    editor.putString("defotURL", defotItem.getURL());
-                    editor.putString("defotDesc",defotItem.getDesc());
-
-                    editor.commit();
-
-
-                    Intent intent = new Intent(MainPageActivity.this,CommentsActivity.class);
-                    startActivity(intent);
-                }
-            });
             return listViewItem;
         }
     }
@@ -222,6 +371,18 @@ public class MainPageActivity extends AppCompatActivity {
             case "deletedefot":
                 String defotId = params[1];
                 apicall = Api.ROOT_URL + apicall + "&id=" + defotId;
+                break;
+            case "getdefotrating":
+                defotId = params[1];
+                apicall = Api.ROOT_URL + apicall + "&defot_id=" + defotId;
+                break;
+            case "getalldefotsrating":
+                apicall = Api.ROOT_URL + apicall;
+                break;
+            case "isdefotrated":
+                defotId = params[1];
+                String userId = params[2];
+                apicall = Api.ROOT_URL + apicall + "&defot_id=" + defotId + "&user_id=" + userId;
                 break;
         }
 
@@ -255,7 +416,54 @@ public class MainPageActivity extends AppCompatActivity {
         return null;
     }
 
-    private class DownloadImageWithURLTask extends AsyncTask<String, Void, Bitmap> {
+    protected String doPost(String... params){
+        String apicall = params[0];
+        String post_data = params[1];
+
+        switch (apicall) {
+            case "ratedefot":
+                apicall = Api.ROOT_URL + apicall;
+                break;
+        }
+        try {
+            URL url = new URL(apicall);
+            HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
+            httpURLConnection.setRequestMethod("POST");
+            httpURLConnection.setDoOutput(true);
+            httpURLConnection.setDoInput(true);
+
+            OutputStream outputStream = httpURLConnection.getOutputStream();
+
+            BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(outputStream, "UTF-8"));
+            bufferedWriter.write(post_data);
+            bufferedWriter.flush();
+            bufferedWriter.close();
+
+            InputStream inputStream = httpURLConnection.getInputStream();
+
+            String result = "";
+            String line = "";
+
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream, "iso-8859-1"));
+            while ((line = bufferedReader.readLine()) != null) {
+                result += line;
+            }
+            bufferedReader.close();
+            inputStream.close();
+            httpURLConnection.disconnect();
+
+            return result;
+
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+     private class DownloadImageWithURLTask extends AsyncTask<String, Void, Bitmap> {
         ImageView bmImage;
         public DownloadImageWithURLTask(ImageView bmImage) {
             this.bmImage = bmImage;
@@ -288,9 +496,14 @@ public class MainPageActivity extends AppCompatActivity {
 
         @Override
         protected String doInBackground(String... params){
+            if(params[0].equals("ratedefot")){
+                String result = doPost(params);
+                return result;
+            }else {
+                String result = doGet(params);
+                return result;
+            }
 
-            String result = doGet(params);
-            return result;
         }
 
 
@@ -312,6 +525,12 @@ public class MainPageActivity extends AppCompatActivity {
 
                 if (!obj.getBoolean("error")) {
                     switch (obj.getString("apicall")) {
+                        case "getalldefotsrating":
+                            JSONArray ratings = obj.getJSONArray("rating");
+
+                            loadDefotRatings(ratings);
+
+                            break;
                         case "getalldefots":
                             JSONArray defots = obj.getJSONArray("defots");
 
@@ -323,6 +542,16 @@ public class MainPageActivity extends AppCompatActivity {
                             break;
                         case "deletedefot":
                             Toast.makeText(MainPageActivity.this, "Pomyślnie usunięto", Toast.LENGTH_LONG).show();
+                            break;
+                        case "getdefotrating":
+                            editor.putInt("defotRating",obj.getInt("rating"));
+                            editor.commit();
+                            break;
+                        case "ratedefot":
+                            Toast.makeText(MainPageActivity.this, "Dzięki za ocenę! :D", Toast.LENGTH_LONG).show();
+                            break;
+                        case "isdefotrated":
+
                             break;
                     }
 

@@ -5,7 +5,7 @@ package com.example.maniekcs1995.defotapp;
  */
 
 public class Api {
-    public static final String ROOT_URL = "http://192.168.0.102/Api/ApiControl/api.php?apicall=";
+    public static final String ROOT_URL = "http://192.168.0.101/Api/ApiControl/api.php?apicall=";
 
     public static final String CREATE_USER_URL = ROOT_URL + "createuser";
     public static final String LOGIN_EXIST_URL = ROOT_URL + "loginexist";

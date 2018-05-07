@@ -208,7 +208,7 @@ public class MainActivity extends AppCompatActivity {
                             try {
                                 result = obj.getString("hash");
                                 if (BCrypt.checkpw(pw, result)) {
-                                    editor.putString(Login, login.getText().toString() );
+                                    editor.putString("login", login.getText().toString() );
                                     editor.commit();
                                     Intent intent = new Intent(MainActivity.this, MainPageActivity.class);
                                     startActivity(intent);
