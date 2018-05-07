@@ -33,6 +33,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="bottom|start"
-            app:elevation="2dp" />
+
+            app:elevation="24dp" />
     </android.support.design.widget.CoordinatorLayout>
 </RelativeLayout>
