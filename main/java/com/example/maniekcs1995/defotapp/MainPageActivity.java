@@ -45,6 +45,7 @@ public class MainPageActivity extends AppCompatActivity {
 
     List<Defot> defotList;
     List<Rating> ratingList;
+    List<userRatings> userRatingsList;
     ListView listView;
     ImageView imageView;
     Bitmap bitmap;
@@ -60,11 +61,18 @@ public class MainPageActivity extends AppCompatActivity {
         sharedpreferences = getSharedPreferences("com.example.maniekcs1995.defotapp", MODE_PRIVATE);
         editor = sharedpreferences.edit();
 
+        checkUserId(sharedpreferences.getString("login", "DEFAULT"));
+
         listView = (ListView) findViewById(R.id.listViewDefots);
 
         addDefotButton = findViewById(R.id.addDefotButton);
         defotList = new ArrayList<>();
         ratingList = new ArrayList<>();
+        userRatingsList = new ArrayList<>();
+
+
+
+        getAllUserRatings(String.valueOf(sharedpreferences.getInt("userId", 0)));
 
         getAllDefotsRating();
 
@@ -72,7 +80,7 @@ public class MainPageActivity extends AppCompatActivity {
            // Toast.makeText(MainPageActivity.this, sharedpreferences.getString("callback", "No callback"), Toast.LENGTH_LONG).show();
         }
 
-        checkUserId(sharedpreferences.getString("login", "DEFAULT"));
+
 
         getAllDefots();
 
@@ -133,6 +141,13 @@ public class MainPageActivity extends AppCompatActivity {
         backgroundWorker.execute(apicall);
     }
 
+    private void getAllUserRatings(String userId){
+        String apicall = "getalluserratings";
+
+        BackgroundWorker backgroundWorker = new BackgroundWorker(this);
+        backgroundWorker.execute(apicall, userId);
+    }
+
     private void rateDefot(int defotId, int userId, int rate) throws UnsupportedEncodingException {
         String apicall = "ratedefot";
 
@@ -142,6 +157,31 @@ public class MainPageActivity extends AppCompatActivity {
 
         BackgroundWorker backgroundWorker = new BackgroundWorker(this);
         backgroundWorker.execute(apicall, post_data);
+    }
+
+    private void checkUserRatings(JSONArray userRatings) throws JSONException{
+        userRatingsList.clear();
+
+        int l = userRatings.length();
+        JSONObject obj1 = userRatings.getJSONObject(0);
+        String cos = String.valueOf(obj1.getInt("id"));
+
+
+        //Toast.makeText(MainPageActivity.this, userRatingsList.get(0).getDefotId(), Toast.LENGTH_LONG).show();
+
+        for(int i = 0; i < l; i++){
+
+            JSONObject obj = userRatings.getJSONObject(i);
+
+            userRatingsList.add(new userRatings(
+                    obj.getInt("id"),
+                    obj.getInt("userId"),
+                    obj.getInt("defotId"),
+                    obj.getInt("value")
+            ));
+
+        }
+
     }
 
     private void loadDefotRatings(JSONArray rating) throws JSONException {
@@ -178,8 +218,6 @@ public class MainPageActivity extends AppCompatActivity {
                 }
             }
         }
-        Toast.makeText(MainPageActivity.this, String.valueOf(ratingList.get(0).getRating()) + String.valueOf(ratingList.get(0).getDefotId())
-                 + String.valueOf(ratingList.get(1).getRating()) + String.valueOf(ratingList.get(1).getDefotId()), Toast.LENGTH_LONG).show();
 
     }
 
@@ -187,10 +225,17 @@ public class MainPageActivity extends AppCompatActivity {
         defotList.clear();
 
 
+
         for (int i = 0; i < defots.length(); i++) {
 
             JSONObject obj = defots.getJSONObject(i);
+            int rating = 0;
 
+            for(int j = 0; j < userRatingsList.size(); j++){
+
+                if(userRatingsList.get(j).getDefotId() == obj.getInt("id"))
+                    rating = userRatingsList.get(j).getRating();
+            }
 
 
             defotList.add(new Defot(
@@ -198,7 +243,7 @@ public class MainPageActivity extends AppCompatActivity {
                     obj.getString("title"),
                     obj.getString("desc"),
                     obj.getString("url"),
-                    0,
+                    rating,
                     obj.getString("date"),
                     obj.getInt("user_id")
             ));
@@ -296,49 +341,59 @@ public class MainPageActivity extends AppCompatActivity {
             }
 
             if(!sharedpreferences.getString("login", "guest").equals("guest")){
-                rateUpButton.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        try {
-                            rateDefot(defot.getId(), sharedpreferences.getInt("userId", 0), 1);
-                            rateUpButton.setClickable(true);
-                            listViewItem.findViewById(R.id.rateDownButton).setVisibility(View.GONE);
-                            try {
-                                if((textViewRating.getText()).equals("(rating)")){
-                                    textViewRating.setText(String.valueOf(1));
-                                }else {
-                                    textViewRating.setText(String.valueOf(ratingList.get(position).getRating() + 1));
-                                }
-                            } catch (IndexOutOfBoundsException e) {
-                                System.out.println("Invalid option");
-                            }
-                        } catch (UnsupportedEncodingException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                });
 
-                rateDownButton.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        try {
-                            rateDefot(defot.getId(), sharedpreferences.getInt("userId", 0), -1);
-                            rateDownButton.setClickable(true);
-                            listViewItem.findViewById(R.id.rateUpButton).setVisibility(View.GONE);
-                            try {
-                                if((textViewRating.getText()).equals("(rating)")){
-                                    textViewRating.setText(String.valueOf(-1));
-                                }else {
-                                    textViewRating.setText(String.valueOf(ratingList.get(position).getRating() - 1));
+                    if(defot.getRating() == 0) {
+                        rateUpButton.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View view) {
+                                try {
+                                    rateDefot(defot.getId(), sharedpreferences.getInt("userId", 0), 1);
+                                    rateUpButton.setEnabled(false);
+                                    listViewItem.findViewById(R.id.rateDownButton).setVisibility(View.GONE);
+                                    try {
+                                        if ((textViewRating.getText()).equals("(rating)")) {
+                                            textViewRating.setText(String.valueOf(1));
+                                        } else {
+                                            textViewRating.setText(String.valueOf(ratingList.get(position).getRating() + 1));
+                                        }
+                                    } catch (IndexOutOfBoundsException e) {
+                                        System.out.println("Invalid option");
+                                    }
+                                } catch (UnsupportedEncodingException e) {
+                                    e.printStackTrace();
                                 }
-                            } catch (IndexOutOfBoundsException e) {
-                                System.out.println("Invalid option");
                             }
-                        } catch (UnsupportedEncodingException e) {
-                            e.printStackTrace();
-                        }
+                        });
+
+
+                        rateDownButton.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View view) {
+                                try {
+                                    rateDefot(defot.getId(), sharedpreferences.getInt("userId", 0), -1);
+                                    rateDownButton.setEnabled(false);
+                                    listViewItem.findViewById(R.id.rateUpButton).setVisibility(View.GONE);
+                                    try {
+                                        if ((textViewRating.getText()).equals("(rating)")) {
+                                            textViewRating.setText(String.valueOf(-1));
+                                        } else {
+                                            textViewRating.setText(String.valueOf(ratingList.get(position).getRating() - 1));
+                                        }
+                                    } catch (IndexOutOfBoundsException e) {
+                                        System.out.println("Invalid option");
+                                    }
+                                } catch (UnsupportedEncodingException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        });
+                    }else if (defot.getRating() == 1){
+                        listViewItem.findViewById(R.id.rateDownButton).setVisibility(View.GONE);
+                        rateUpButton.setEnabled(false);
+                    }else if (defot.getRating() == -1){
+                        listViewItem.findViewById(R.id.rateUpButton).setVisibility(View.GONE);
+                        rateDownButton.setEnabled(false);
                     }
-                });
             }else{
                 listViewItem.findViewById(R.id.rateUpButton).setVisibility(View.GONE);
                 listViewItem.findViewById(R.id.rateDownButton).setVisibility(View.GONE);
@@ -383,6 +438,10 @@ public class MainPageActivity extends AppCompatActivity {
                 defotId = params[1];
                 String userId = params[2];
                 apicall = Api.ROOT_URL + apicall + "&defot_id=" + defotId + "&user_id=" + userId;
+                break;
+            case "getalluserratings":
+                userId = params[1];
+                apicall = Api.ROOT_URL + apicall + "&user_id=" + userId;
                 break;
         }
 
@@ -550,8 +609,11 @@ public class MainPageActivity extends AppCompatActivity {
                         case "ratedefot":
                             Toast.makeText(MainPageActivity.this, "Dzięki za ocenę! :D", Toast.LENGTH_LONG).show();
                             break;
-                        case "isdefotrated":
+                        case "getalluserratings":
 
+                            JSONArray userRatings = obj.getJSONArray("userRatings");
+
+                            checkUserRatings(userRatings);
                             break;
                     }
 
