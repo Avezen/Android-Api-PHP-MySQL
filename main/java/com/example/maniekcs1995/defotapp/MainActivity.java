@@ -14,7 +14,6 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -59,11 +58,6 @@ public class MainActivity extends AppCompatActivity {
         sharedpreferences = getSharedPreferences("com.example.maniekcs1995.defotapp", MODE_PRIVATE);
         editor = sharedpreferences.edit();
 
-        editor.remove("login");
-        if(editor.commit())
-            Toast.makeText(MainActivity.this, "wylogowano", Toast.LENGTH_LONG).show();
-        else
-            Toast.makeText(MainActivity.this, "nie wylogowano", Toast.LENGTH_LONG).show();
 
 
         loginButton.setOnClickListener(new View.OnClickListener() {
@@ -216,7 +210,7 @@ public class MainActivity extends AppCompatActivity {
                                     editor.commit();
                                     Intent intent = new Intent(MainActivity.this, MainPageActivity.class);
                                     startActivity(intent);
-                                    
+                                    finish();
                                 } else {
                                     alertDialog.setMessage("Nieprawidłowy login lub hasło");
                                     alertDialog.show();

@@ -51,7 +51,7 @@ public class MainPageActivity extends AppCompatActivity {
     Bitmap bitmap;
     SharedPreferences sharedpreferences;
     SharedPreferences.Editor editor;
-    FloatingActionButton addDefotButton;
+    FloatingActionButton addDefotButton, logoutButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,11 +61,14 @@ public class MainPageActivity extends AppCompatActivity {
         sharedpreferences = getSharedPreferences("com.example.maniekcs1995.defotapp", MODE_PRIVATE);
         editor = sharedpreferences.edit();
 
+
+
         checkUserId(sharedpreferences.getString("login", "DEFAULT"));
 
         listView = (ListView) findViewById(R.id.listViewDefots);
 
         addDefotButton = findViewById(R.id.addDefotButton);
+        logoutButton = findViewById(R.id.logoutButton);
         defotList = new ArrayList<>();
         ratingList = new ArrayList<>();
         userRatingsList = new ArrayList<>();
@@ -92,6 +95,17 @@ public class MainPageActivity extends AppCompatActivity {
             public void onClick(View view) {
                 Intent intent = new Intent(MainPageActivity.this, AddDefotActivity.class);
                 startActivity(intent);
+            }
+        });
+
+        logoutButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                editor.remove("login");
+                editor.commit();
+                Intent intent = new Intent(MainPageActivity.this, MainActivity.class);
+                startActivity(intent);
+                finish();
             }
         });
 
